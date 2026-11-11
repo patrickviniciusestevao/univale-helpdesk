@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="icon" type="image/svg+xml" href="/icone.svg" />
+    <title>Univale Helpdesk</title>
+    <script>
+      // Aplica o tema salvo antes de desenhar a página (evita "piscar" claro → escuro).
+      try {
+        const tema = localStorage.getItem("tema");
+        const escuro = tema ? tema === "escuro" : matchMedia("(prefers-color-scheme: dark)").matches;
+        if (escuro) document.documentElement.classList.add("dark");
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

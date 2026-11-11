@@ -1,0 +1,235 @@
+CRIAR MAIS UM ARQUIVO (toast.js):
+frontend/
+├── index.html
+├── style.css
+└── js/
+    ├── api.js
+    ├── ui.js
+    ├── modal.js
+    ├── toast.js
+    └── script.js
+-----------------------------------------------------------------
+No index.html, basta adicionar antes do fechamento do body:
+<div id="toastContainer" class="toast-container"></div>
+-----------------------------------------------------------------
+E incluir o novo JS antes do script.js:
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/toast.js"></script>
+<script src="js/script.js"></script>
+-----------------------------------------------------------------
+No style.css, acrescente:
+/* =====================================================
+   TOAST
+====================================================== */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.toast {
+    min-width: 280px;
+    max-width: 380px;
+    padding: 14px 18px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    transform: translateX(30px);
+    transition: 0.3s;
+}
+.toast.ativo {
+    opacity: 1;
+    transform: translateX(0);
+}
+.toast-sucesso {
+    background-color: #16a34a;
+}
+.toast-erro {
+    background-color: #dc2626;
+}
+.toast-info {
+    background-color: #2563eb;
+}
+.toast-aviso {
+    background-color: #d97706;
+}
+-----------------------------------------------------------------
+Alterações no arquivo script.js:
+--------------------------------
+
+CADASTRO:
+
+async function cadastrarChamado() {
+    const formulario = document.querySelector("#formChamado");
+    if (!formulario.reportValidity()) {
+        return;
+    }
+    const novoChamado = {
+        titulo: document.querySelector("#titulo").value.trim(),
+        solicitante: document.querySelector("#solicitante").value.trim(),
+        email: document.querySelector("#email").value.trim(),
+        categoria: document.querySelector("#categoria").value,
+        prioridade: document.querySelector("#prioridade").value,
+        descricao: document.querySelector("#descricao").value.trim(),
+        status: "Aberto"
+    };
+    try {
+        await criarChamado(novoChamado);
+        fecharModal();
+        await carregarChamados();
+        mostrarToast(
+            "Chamado cadastrado com sucesso.",
+            "sucesso"
+        );
+    }
+    catch (erro) {
+        console.error(erro);
+        mostrarToast(
+            "Não foi possível cadastrar o chamado.",
+            "erro"
+        );
+    }
+}
+
+-----------------------------------------------
+
+Na edição:
+
+try {
+    await alterarChamado(id, chamadoAtualizado);
+    fecharModal();
+    await carregarChamados();
+    mostrarToast(
+        "Chamado atualizado com sucesso.",
+        "sucesso"
+    );
+}
+catch (erro) {
+    console.error(erro);
+    mostrarToast(
+        "Não foi possível atualizar o chamado.",
+        "erro"
+    );
+}
+
+-----------------------------------------------
+
+Na exclusão:
+
+try {
+    await removerChamado(id);
+    fecharModal();
+    await carregarChamados();
+    mostrarToast(
+        "Chamado excluído com sucesso.",
+        "sucesso"
+    );
+}
+catch (erro) {
+    console.error(erro);
+    mostrarToast(
+        "Não foi possível excluir o chamado.",
+        "erro"
+    );
+}
+
+-----------------------------------------------
+
+E no carregamento inicial eu não mostraria toast de sucesso toda vez, porque ficaria cansativo. Eu usaria toast apenas se houver erro:
+
+async function carregarChamados() {
+    mostrarCarregamento();
+    try {
+        chamados = await buscarChamados();
+        atualizarInterface(chamados);
+    }
+    catch (erro) {
+        console.error(erro);
+        mostrarErro(
+            "Não foi possível carregar os chamados."
+        );
+        mostrarToast(
+            "Erro ao conectar com a API.",
+            "erro"
+        );
+    }
+}
+
+
+**************************************************************
+**************************************************************
+
+agora altere no arquivo ui.js:
+
+function mostrarCarregamento() {
+    listaChamados.innerHTML = `
+        <div class="mensagem">
+            Carregando chamados...
+        </div>
+    `;
+}
+function mostrarErro(mensagem) {
+    listaChamados.innerHTML = `
+        <div class="mensagem mensagem-erro">
+            ${mensagem}
+        </div>
+    `;
+}
+
+
+**************************************************************
+**************************************************************
+
+Para ter realmente uma mensagem para cada response HTTP,
+aí podemos melhorar o api.js para ler também a mensagem retornada pelo backend.
+Por exemplo, o backend pode responder no POST:
+
+{
+    "mensagem": "Chamado cadastrado com sucesso.",
+    "chamado": {
+        "id": 7
+    }
+}
+
+-----------------------------------------------
+
+E no api.js:
+
+async function criarChamado(chamado) {
+    const resposta = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(chamado)
+    });
+    const dados = await resposta.json();
+    if (!resposta.ok) {
+        throw new Error(dados.erro);
+    }
+    return dados;
+}
+
+-----------------------------------------------
+
+Depois no script.js:
+
+const resposta =
+    await criarChamado(novoChamado);
+
+mostrarToast(
+    resposta.mensagem,
+    "sucesso"
+);
+
+-----------------------------------------------
+--------------------- Fim! --------------------
+-------------- O Céu é o Limite ---------------
+-----------------------------------------------
